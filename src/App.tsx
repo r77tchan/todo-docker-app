@@ -6,34 +6,59 @@ type Todo = {
   completed: boolean;
 };
 
+const API_BASE_URL = "http://localhost:3000";
+
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    const loadTodos = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/todos`);
 
-  const fetchTodos = async () => {
-    const response = await fetch("https://localhost:3000/todos");
-    const data = await response.json();
-    setTodos(data);
-  };
+        if (!response.ok) {
+          throw new Error(`Failed to fetch todos: ${response.status}`);
+        }
+
+        const data: { todos: Todo[] } = await response.json();
+        setTodos(data.todos);
+        setError("");
+      } catch (error) {
+        console.error(error);
+        setError("Todoの取得に失敗しました");
+      }
+    };
+
+    void loadTodos();
+  }, []);
 
   const handleAddTodo = async () => {
     if (!title.trim()) return;
 
-    const response = await fetch("https://localhost:3000/todos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title }),
-    });
-    const data = await response.json();
+    try {
+      setError("");
 
-    setTodos([...todos, { id: todos.length + 1, title, completed: false }]);
-    setTitle("");
+      const response = await fetch(`${API_BASE_URL}/todos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add todo: ${response.status}`);
+      }
+
+      const data: { todo: Todo } = await response.json();
+      setTodos([...todos, data.todo]);
+      setTitle("");
+    } catch (error) {
+      console.error(error);
+      setError("Todoの追加に失敗しました");
+    }
   };
 
   const handleToggleTodo = (id: number) => {
@@ -58,8 +83,8 @@ export default function App() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !(e.nativeEvent as any).isComposing) {
-                  handleAddTodo();
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  void handleAddTodo();
                 }
               }}
               placeholder="新しいタスクを入力..."
@@ -67,12 +92,18 @@ export default function App() {
               className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
             <button
-              onClick={handleAddTodo}
+              onClick={() => void handleAddTodo()}
               className="cursor-pointer rounded-lg bg-blue-500 px-6 py-2 text-white hover:bg-blue-600 active:scale-95"
             >
               追加
             </button>
           </div>
+
+          {error && (
+            <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          )}
 
           {todos.length === 0 ? (
             <div className="py-8 text-center text-gray-500">
