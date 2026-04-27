@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Todo = {
   id: number;
@@ -10,11 +10,30 @@ export default function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
 
-  const handleAddTodo = () => {
-    if (title.trim()) {
-      setTodos([...todos, { id: todos.length + 1, title, completed: false }]);
-      setTitle("");
-    }
+  useEffect(() => {
+    fetchTodos();
+  }, []);
+
+  const fetchTodos = async () => {
+    const response = await fetch("https://localhost:3000/todos");
+    const data = await response.json();
+    setTodos(data);
+  };
+
+  const handleAddTodo = async () => {
+    if (!title.trim()) return;
+
+    const response = await fetch("https://localhost:3000/todos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title }),
+    });
+    const data = await response.json();
+
+    setTodos([...todos, { id: todos.length + 1, title, completed: false }]);
+    setTitle("");
   };
 
   const handleToggleTodo = (id: number) => {

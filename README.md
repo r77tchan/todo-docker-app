@@ -1,3 +1,9 @@
+### docker-compose.yml起動
+
+```
+docker compose up
+```
+
 #### build (イメージ作成)
 
 ```
