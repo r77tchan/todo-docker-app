@@ -1,8 +1,8 @@
 ```
-npm install
-npm run dev
+cd todo-api
+docker build -t api .
 ```
 
 ```
-open http://localhost:3000
+docker run --rm --name my-api -p 3000:3000 api
 ```
